@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace, Debug, Default)]
 pub enum FightStatus {
     #[default]
-    Scheduled = 0,
-    Live = 1,
-    Finished = 2,
-    Cancelled = 3,
+    Scheduled,
+    Live,
+    Finished,
+    Cancelled,
 }
 
 #[account]
@@ -34,34 +34,14 @@ pub struct FightState {
 }
 
 impl FightState {
-    pub const LEN: usize = 8 + // discriminator
-        8 + // fight_id
-        32 + // creator
-        1 + // char_a
-        1 + // char_b
-        8 + // stake_lamports
-        1 + // status
-        4 + // aura_a
-        4 + // aura_b
-        8 + // damage_a
-        8 + // damage_b
-        8 + // tx_count
-        8 + // seed
-        1 + // winner
-        4 + // player_count
-        4 + // team_a_count
-        4 + // team_b_count
-        8 + // start_slot
-        8 + // end_slot
-        1 + // bump
-        64; // reserved padding
+    pub const LEN: usize = 8 + 8 + 32 + 1 + 1 + 8 + 1 + 4 + 4 + 8 + 8 + 8 + 8 + 1 + 4 + 4 + 4 + 8 + 8 + 1 + 64;
 }
 
 #[account]
 #[derive(Default)]
 pub struct PlayerSeat {
     pub fight_id: u64,
-    pub player: Pubkey,    // session key or wallet
+    pub player: Pubkey,    // session key
     pub owner: Pubkey,     // primary wallet
     pub team: u8,          // 1 = A, 2 = B
     pub damage: u64,
@@ -71,16 +51,7 @@ pub struct PlayerSeat {
 }
 
 impl PlayerSeat {
-    pub const LEN: usize = 8 + // discriminator
-        8 + // fight_id
-        32 + // player
-        32 + // owner
-        1 + // team
-        8 + // damage
-        16 + // emotes (4 * 4)
-        1 + // claimed
-        1 + // bump
-        32; // reserved
+    pub const LEN: usize = 8 + 8 + 32 + 32 + 1 + 8 + 16 + 1 + 1 + 32;
 }
 
 #[account]
@@ -96,6 +67,46 @@ impl FightVault {
     pub const LEN: usize = 8 + 8 + 8 + 8 + 1 + 32;
 }
 
+/// Sealed Ambush PDA for Private ER (Intel TDX TEE). Sealed with 0-member ephemeral permission.
+#[account]
+#[derive(Default)]
+pub struct SealedAmbush {
+    pub fight_id: u64,
+    pub session: Pubkey,
+    pub trap_type: u8,
+    pub damage_multiplier: u8,
+    pub executed: bool,
+    pub bump: u8,
+}
+
+impl SealedAmbush {
+    pub const LEN: usize = 8 + 8 + 32 + 1 + 1 + 1 + 1 + 32;
+}
+
+#[account]
+#[derive(Default)]
+pub struct QueueState {
+    pub stake: u64,
+    pub count: u32,
+    pub awaiting_deal: bool,
+    pub bump: u8,
+}
+
+impl QueueState {
+    pub const LEN: usize = 8 + 8 + 4 + 1 + 1 + 32;
+}
+
+#[account]
+#[derive(Default)]
+pub struct QueueVault {
+    pub queue: Pubkey,
+    pub bump: u8,
+}
+
+impl QueueVault {
+    pub const LEN: usize = 8 + 32 + 1 + 32;
+}
+
 #[account]
 #[derive(Default)]
 pub struct WinnerNFTBadge {
@@ -103,7 +114,7 @@ pub struct WinnerNFTBadge {
     pub owner: Pubkey,
     pub character: u8,
     pub rarity: u8,        // 0: Common, 1: Rare, 2: Epic, 3: Legendary, 4: Mythic
-    pub damage_share_bps: u16, // basis points (e.g. 2450 = 24.50%)
+    pub damage_share_bps: u16, // basis points
     pub amount_won_lamports: u64,
     pub minted_at: i64,
     pub bump: u8,

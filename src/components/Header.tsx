@@ -1,110 +1,107 @@
-import React, { useState } from 'react';
-import { soundEngine } from '../engine/audio';
+import React from 'react';
 
 interface HeaderProps {
-  currentView: 'arena' | 'controller' | 'lobby' | 'profile';
-  onNavigate: (view: 'arena' | 'controller' | 'lobby' | 'profile') => void;
-  walletConnected: boolean;
-  onConnectWallet: () => void;
+  currentRoute: string; // 'home' | 'dashboard' | 'profile' | 'characters' | 'play' | 'player' | 'screen'
+  walletConnected?: boolean;
+  onToggleWallet?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  currentView,
-  onNavigate,
-  walletConnected,
-  onConnectWallet
+  currentRoute,
+  walletConnected = true,
+  onToggleWallet
 }) => {
-  const [audioMuted, setAudioMuted] = useState(false);
-
-  const toggleSound = () => {
-    const nextState = !audioMuted;
-    setAudioMuted(nextState);
-    soundEngine.toggle(!nextState);
-  };
+  const isCombatRoute = currentRoute === 'play' || currentRoute === 'player' || currentRoute === 'screen';
+  const isSpectator = currentRoute === 'screen';
 
   return (
-    <header className="top" style={{ paddingBottom: '8px', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <a
-          href="#/arena"
-          className="brand"
-          onClick={(e) => { e.preventDefault(); onNavigate('arena'); }}
-          style={{ display: 'flex', alignItems: 'center' }}
-        >
-          <img
-            src="/img/street-smack-logo.png"
-            alt="Street Smack"
-            style={{
-              height: '42px',
-              width: 'auto',
-              objectFit: 'contain',
-              filter: 'drop-shadow(0 2px 8px rgba(255, 194, 58, 0.35))'
-            }}
-          />
-        </a>
+    <header className="top">
+      {/* Brand Logo */}
+      <a className="brand" href="#/">
+        <img
+          src="/img/street-smack-logo.png"
+          alt="Street Smack"
+          style={{ maxHeight: '42px', width: 'auto' }}
+        />
+      </a>
 
-        <div className="chip" style={{ background: '#1c0f2e', color: '#ffc23a', borderColor: '#ffc23a' }}>
-          ⚡ MAGICBLOCK ER (15ms)
-        </div>
-      </div>
-
+      {/* Main Navigation */}
       <nav>
-        <button
-          type="button"
-          className="ghost"
-          aria-pressed={currentView === 'arena'}
-          onClick={() => onNavigate('arena')}
-        >
-          📺 ARENA (BIG SCREEN)
-        </button>
+        <span className="chip" title="Connected to Solana Devnet & MagicBlock Ephemeral Rollup">
+          Solana Blitz · MagicBlock ER
+        </span>
 
-        <button
-          type="button"
-          className="ghost"
-          aria-pressed={currentView === 'controller'}
-          onClick={() => onNavigate('controller')}
-        >
-          🎮 PLAY (CONTROLLER)
-        </button>
+        {!isSpectator && currentRoute !== 'dashboard' && (
+          <a className="ghost" href="#/dashboard">
+            Dashboard
+          </a>
+        )}
 
-        <button
-          type="button"
-          className="ghost"
-          aria-pressed={currentView === 'lobby'}
-          onClick={() => onNavigate('lobby')}
-        >
-          🥊 FIGHTS
-        </button>
+        {!isSpectator && currentRoute !== 'profile' && (
+          <a className="ghost" href="#/profile">
+            Profile
+          </a>
+        )}
 
-        <button
-          type="button"
-          className="ghost"
-          aria-pressed={currentView === 'profile'}
-          onClick={() => onNavigate('profile')}
-        >
-          🃏 NFT DECK
-        </button>
+        {!isSpectator && currentRoute !== 'characters' && (
+          <a className="ghost" href="#/characters">
+            Fighters
+          </a>
+        )}
 
-        <button
-          type="button"
-          className="ghost"
-          onClick={toggleSound}
-          title={audioMuted ? 'Unmute Sound' : 'Mute Sound'}
-        >
-          {audioMuted ? '🔇' : '🔊'}
-        </button>
+        {/* Combat Mode Switcher */}
+        {isCombatRoute && (
+          <span className="modeswitch" role="group" aria-label="Display mode">
+            <a
+              href="#/play"
+              title="Full arena: stage, active mini-game, and emote attacks"
+              className={currentRoute === 'play' ? 'on' : ''}
+              aria-current={currentRoute === 'play' ? 'true' : undefined}
+            >
+              Normal
+            </a>
+            <a
+              href="#/player"
+              title="Mobile Controller: compact bars, large mini-game, and emotes"
+              className={currentRoute === 'player' ? 'on' : ''}
+              aria-current={currentRoute === 'player' ? 'true' : undefined}
+            >
+              Player
+            </a>
+            <a
+              href="#/screen"
+              title="Spectator broadcast: fullscreen cinematic arena"
+              className={currentRoute === 'screen' ? 'on' : ''}
+              aria-current={currentRoute === 'screen' ? 'true' : undefined}
+            >
+              Spectator
+            </a>
+          </span>
+        )}
 
-        <div className="walletchip">
-          {walletConnected ? (
-            <button type="button" className="ghost" style={{ borderColor: 'var(--gold)', color: 'var(--gold)' }}>
-              🟢 7xKX...9Ab2 (SESSION KEY)
+
+        {/* Solana Wallet Chip */}
+        {walletConnected ? (
+          <span className="walletchip">
+            <code>7xKX...9Ab2</code>
+            <button
+              type="button"
+              className="ghost"
+              onClick={onToggleWallet}
+              style={{ padding: '4px 8px', fontSize: '11px' }}
+            >
+              Disconnect
             </button>
-          ) : (
-            <button type="button" className="cta small" onClick={onConnectWallet}>
-              CONNECT WALLET
-            </button>
-          )}
-        </div>
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="ghost"
+            onClick={onToggleWallet}
+          >
+            Connect Wallet
+          </button>
+        )}
       </nav>
     </header>
   );

@@ -6,7 +6,6 @@ import { ClickerGame } from '../engine/minigames/Clicker';
 import { TargetGame } from '../engine/minigames/Target';
 import { GaugeGame } from '../engine/minigames/Gauge';
 import { RedBlackGame } from '../engine/minigames/RedBlack';
-import { NoiseGame } from '../engine/minigames/Noise';
 
 interface ControllerProps {
   onBackToArena: () => void;
@@ -51,10 +50,9 @@ export const Controller: React.FC<ControllerProps> = ({ onBackToArena }) => {
     { id: 'target', name: 'Precision Target', hint: 'Hit the target: +30 pts! Miss: -10 pts.', Component: TargetGame },
     { id: 'gauge', name: 'Timing Gauge', hint: 'Stop cursor in center: Gold +60 · Purple +30 · Red -30', Component: GaugeGame },
     { id: 'redblack', name: 'Red or Black', hint: 'Card flip gamble: Win +25 · Wrong -20', Component: RedBlackGame },
-    { id: 'noise', name: 'Make Some Noise!', hint: 'Scream into your mic to charge the red meter for +35 pts!', Component: NoiseGame },
   ];
 
-  const currentMiniGame = miniGames[gameState.activeMiniGameIndex];
+  const currentMiniGame = miniGames[gameState.activeMiniGameIndex] || miniGames[0];
   const MiniGameComp = currentMiniGame.Component;
   const miniGameProgressPercent = ((match.timeLeftSeconds % 10) / 10) * 100;
 

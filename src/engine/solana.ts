@@ -5,11 +5,22 @@ export const ROUTER_ENDPOINT = 'https://devnet-router.magicblock.app/';
 export const EPHEMERAL_RPC_URL = 'https://devnet-as.magicblock.app/';
 export const PROGRAM_ID = new PublicKey('Smack11111111111111111111111111111111111111');
 
+// MagicBlock Public Rollup and VRF Constants (matching Herd's SPIKES.md & lib.rs)
+export const PUBLIC_VALIDATOR = new PublicKey('MTEWGuqxUpYZGFJQcp8tLN7x5v9BSeoFHYWQQ3n3xzo');
+export const DEFAULT_EPHEMERAL_QUEUE = new PublicKey('EpheQueue1111111111111111111111111111111111');
+
 export interface SessionKeyInfo {
   publicKey: PublicKey;
   keypair: Keypair;
 }
 
+/**
+ * SolanaService — Implements the four architectural pillars proven in Herd:
+ * 1. Private Ephemeral Rollups (PER) — Sealed account with zero-member ephemeral permissions.
+ * 2. VRF Oracle — Queue deal shuffling and sudden-death tiebreaker coin flips.
+ * 3. Session Keys — One wallet signature to seat; zero-gas instant in-rollup actions.
+ * 4. Non-delegated L1 Vault PDA — Stakes never enter the rollup; payouts occur on base Solana.
+ */
 export class SolanaService {
   public baseConnection: Connection;
   public erConnection: Connection;
@@ -21,6 +32,7 @@ export class SolanaService {
     this.initSessionKey();
   }
 
+  // Pillar 3: Session Keys — Throwaway key in memory for zero-gas sub-20ms signless loop
   public initSessionKey(): SessionKeyInfo {
     if (typeof window === 'undefined') {
       const kp = Keypair.generate();
@@ -35,7 +47,7 @@ export class SolanaService {
         this.sessionKey = { publicKey: kp.publicKey, keypair: kp };
         return this.sessionKey;
       } catch {
-        // regenerate
+        // regenerate on error
       }
     }
 
@@ -52,17 +64,7 @@ export class SolanaService {
     return this.sessionKey;
   }
 
-  // Derive Fight State PDA
-  public getFightPda(fightId: number): [PublicKey, number] {
-    const fightIdBuf = Buffer.alloc(8);
-    fightIdBuf.writeBigUInt64LE(BigInt(fightId));
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from('fight'), fightIdBuf],
-      PROGRAM_ID
-    );
-  }
-
-  // Derive Vault PDA (Never delegated; holds real SOL custody on L1)
+  // Pillar 4: Non-delegated L1 Vault PDA — Real SOL stakes never enter the rollup
   public getVaultPda(fightId: number): [PublicKey, number] {
     const fightIdBuf = Buffer.alloc(8);
     fightIdBuf.writeBigUInt64LE(BigInt(fightId));
@@ -72,12 +74,42 @@ export class SolanaService {
     );
   }
 
-  // Derive Player Seat PDA
+  // Derive Fight State PDA (Delegated to ER during combat)
+  public getFightPda(fightId: number): [PublicKey, number] {
+    const fightIdBuf = Buffer.alloc(8);
+    fightIdBuf.writeBigUInt64LE(BigInt(fightId));
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('fight'), fightIdBuf],
+      PROGRAM_ID
+    );
+  }
+
+  // Derive Player Seat PDA (Registers owner wallet + session key)
   public getSeatPda(fightId: number, playerPubkey: PublicKey): [PublicKey, number] {
     const fightIdBuf = Buffer.alloc(8);
     fightIdBuf.writeBigUInt64LE(BigInt(fightId));
     return PublicKey.findProgramAddressSync(
       [Buffer.from('seat'), fightIdBuf, playerPubkey.toBuffer()],
+      PROGRAM_ID
+    );
+  }
+
+  // Pillar 1: Private ER Sealed Account PDA (Sealed move / TEE Ambush with 0 members)
+  public getSealedAmbushPda(fightId: number, sessionKey: PublicKey): [PublicKey, number] {
+    const fightIdBuf = Buffer.alloc(8);
+    fightIdBuf.writeBigUInt64LE(BigInt(fightId));
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('ambush'), fightIdBuf, sessionKey.toBuffer()],
+      PROGRAM_ID
+    );
+  }
+
+  // Pillar 2: VRF Matchmaking Queue PDA (On-chain queue dealt by oracle)
+  public getQueuePda(stakeLamports: number): [PublicKey, number] {
+    const stakeBuf = Buffer.alloc(8);
+    stakeBuf.writeBigUInt64LE(BigInt(stakeLamports));
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('queue'), stakeBuf],
       PROGRAM_ID
     );
   }

@@ -1,0 +1,16 @@
+{
+  "name": "street-smack-scripts",
+  "version": "1.0.0",
+  "description": "Devnet and MagicBlock Ephemeral Rollup test scripts for Street Smack",
+  "type": "module",
+  "scripts": {
+    "game": "bun run game.ts",
+    "check-sealed": "bun run check-sealed.ts",
+    "queue": "bun run queue.ts"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.8",
+    "bs58": "^6.0.0",
+    "tweetnacl": "^1.0.3"
+  }
+}

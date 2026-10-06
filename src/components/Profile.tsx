@@ -1,136 +1,223 @@
-import React, { useState } from 'react';
-import confetti from 'canvas-confetti';
+import React from 'react';
 import { gameState } from '../engine/gameState';
 import { FIGHTERS, CharacterSvg } from '../engine/fighters';
-import { soundEngine } from '../engine/audio';
+import { RARITIES } from './Booster';
 
 export const Profile: React.FC = () => {
-  const [claimed, setClaimed] = useState(false);
-  const [claiming, setClaiming] = useState(false);
-
   const match = gameState.match;
-  const isWinner = match.status === 'finished' && match.winner === gameState.myTeam;
-  const winnerFighter = match.winner === 'A' ? match.charA : match.charB;
+  const me = match.players.find(p => p.isMe);
 
-  const handleClaim = () => {
-    setClaiming(true);
-    setTimeout(() => {
-      setClaiming(false);
-      setClaimed(true);
-      soundEngine.playCritical();
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 }
-      });
-    }, 1200);
+  const stats = {
+    address: '7xKXtg9Ab2...4mVP',
+    winrate: 0.68,
+    matches: 19,
+    wins: 13,
+    losses: 6,
+    damage: 3480 + (me?.damage || 0),
+    stakedSol: 0.95,
+    wonSol: 1.62,
+    emotes: {
+      six7: 28 + (me?.emotes['six7'] || 0),
+      dab: 14 + (me?.emotes['dab'] || 0),
+      griddy: 8 + (me?.emotes['griddy'] || 0),
+      quoicoubeh: 4 + (me?.emotes['quoicoubeh'] || 0)
+    },
+    nftsByRarity: [4, 3, 2, 1] // Common, Rare, Epic, Legendary
   };
 
-  const userCards = [
+  const nfts = [
     {
-      id: 1,
-      fightId: 107,
+      tokenId: 8841,
+      matchId: 107,
       character: 'fraisita',
-      rarity: 'Legendary',
-      color: '#ffc23a',
-      dmgShare: '34%',
-      amountWon: '0.45 SOL'
+      rarity: 3, // Legendary
+      mintedAt: 'Today'
     },
     {
-      id: 2,
-      fightId: 106,
+      tokenId: 7219,
+      matchId: 106,
       character: 'tung',
-      rarity: 'Epic',
-      color: '#9c8bff',
-      dmgShare: '22%',
-      amountWon: '0.28 SOL'
+      rarity: 2, // Epic
+      mintedAt: 'Yesterday'
     },
     {
-      id: 3,
-      fightId: 104,
+      tokenId: 5540,
+      matchId: 104,
       character: 'rerA',
-      rarity: 'Rare',
-      color: '#4fa3e0',
-      dmgShare: '12%',
-      amountWon: '0.14 SOL'
+      rarity: 1, // Rare
+      mintedAt: 'Yesterday'
+    },
+    {
+      tokenId: 3108,
+      matchId: 101,
+      character: 'tralalero',
+      rarity: 0, // Common
+      mintedAt: '2 days ago'
     }
   ];
 
+  const netSol = stats.wonSol - stats.stakedSol;
+
   return (
-    <div className="screen">
-      <div className="lobbyhead">
-        <h1>YOUR <em>STREET SMACK DECK</em></h1>
-        <p>Victory NFT Cards minted from your battle participation and Solana L1 Vault payouts.</p>
+    <section className="screen">
+      {/* Header Info */}
+      <div className="lobby">
+        <div>
+          <small>My Profile</small>
+          <h2>{stats.address}</h2>
+        </div>
+        <div>
+          <small>Winrate</small>
+          <span className="big">{Math.round(stats.winrate * 100)} %</span>
+        </div>
+        <div>
+          <small>NFT Collection</small>
+          <span className="big">{nfts.length}</span>
+        </div>
       </div>
 
-      {/* Claim Banner for Recent Match */}
-      {match.status === 'finished' && (
-        <div className="card" style={{ border: '2px solid var(--gold)', background: 'linear-gradient(135deg, #2a1545, #140a1f)' }}>
-          <h2>🏆 MATCH #{match.id} REWARD SETTLEMENT</h2>
-          {isWinner ? (
+      {/* Facts Grid */}
+      <dl className="facts">
+        <div>
+          <dt>Matches Played</dt>
+          <dd>{stats.matches}</dd>
+        </div>
+        <div>
+          <dt>Victories</dt>
+          <dd>{stats.wins}</dd>
+        </div>
+        <div>
+          <dt>Defeats</dt>
+          <dd>{stats.losses}</dd>
+        </div>
+        <div>
+          <dt>Total Damage</dt>
+          <dd>{stats.damage.toLocaleString('en-US')}</dd>
+        </div>
+      </dl>
+
+      {/* Cards Grid */}
+      <div className="endgrid">
+        {/* SOL Financial Record */}
+        <div className="card">
+          <h2>SOL Ledger</h2>
+          <dl className="money">
             <div>
-              <p>
-                Congratulations! Your team won the battle. You dealt <b>{match.players.find(p => p.isMe)?.damage || 240}</b> damage
-                to the enemy aura bar.
-              </p>
-              <div style={{ margin: '14px 0' }}>
-                {claimed ? (
-                  <span className="chip" style={{ fontSize: '14px', padding: '6px 14px', color: '#35e07a', borderColor: '#35e07a' }}>
-                    ✓ 0.38 SOL CLAIMED FROM L1 VAULT + EPIC CARD MINTED!
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    className="cta"
-                    onClick={handleClaim}
-                    disabled={claiming}
-                  >
-                    {claiming ? 'CLAIMING ON SOLANA L1...' : 'CLAIM 0.38 SOL + DRAW VICTORY CARD'}
-                  </button>
-                )}
-              </div>
+              <dt>Staked</dt>
+              <dd>−{stats.stakedSol.toFixed(2)} SOL</dd>
             </div>
-          ) : (
-            <p>
-              Your team fought bravely! The losers' stake pot was distributed to the winning warriors.
-              Better luck in the next round!
-            </p>
-          )}
+            <div>
+              <dt>Claimed</dt>
+              <dd>+{stats.wonSol.toFixed(2)} SOL</dd>
+            </div>
+            <div className="total">
+              <dt>Net PnL</dt>
+              <dd style={{ color: netSol >= 0 ? 'var(--gold)' : 'var(--ember)' }}>
+                {netSol >= 0 ? '+' : '−'}{Math.abs(netSol).toFixed(2)} SOL
+              </dd>
+            </div>
+          </dl>
+          <p style={{ marginTop: '4px' }}>
+            All payouts settle directly from the non-delegated Solana L1 Vault PDA.
+          </p>
         </div>
-      )}
 
-      {/* NFT Card Grid */}
-      <div className="card">
-        <h2>Your Trophy Cards ({userCards.length})</h2>
-        <div className="nftgrid">
-          {userCards.map(c => {
-            const fighter = FIGHTERS[c.character] || FIGHTERS['tung'];
-            return (
-              <div
-                key={c.id}
-                className="nftcard"
-                style={{
-                  '--c': c.color,
-                  boxShadow: `0 0 16px ${c.color}44`,
-                  border: `2px solid ${c.color}`
-                } as React.CSSProperties}
-              >
-                <div style={{ width: '130px', height: '170px' }}>
-                  <CharacterSvg character={c.character} facing="right" pose="victory" />
-                </div>
-                <b className="rar" style={{ color: c.color }}>{c.rarity.toUpperCase()}</b>
-                <span className="sub">{fighter.name}</span>
-                <span style={{ fontSize: '11px', color: 'var(--gold)', fontWeight: 700 }}>
-                  +{c.amountWon}
-                </span>
-                <span style={{ fontSize: '10px', color: 'var(--bone-dim)' }}>
-                  Aura Dmg: {c.dmgShare}
-                </span>
-              </div>
-            );
-          })}
+        {/* Emotes Fired Table */}
+        <div className="card">
+          <h2>Emotes Fired</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Emote</th>
+                <th>Sent (Txs)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>6·7 (Rapid Jab)</td>
+                <td>{stats.emotes.six7}</td>
+              </tr>
+              <tr>
+                <td>Dab (Stun combo)</td>
+                <td>{stats.emotes.dab}</td>
+              </tr>
+              <tr>
+                <td>Griddy (Shockwave)</td>
+                <td>{stats.emotes.griddy}</td>
+              </tr>
+              <tr>
+                <td>Quoicoubeh (Finisher blast)</td>
+                <td>{stats.emotes.quoicoubeh}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Each emote is a zero-gas MagicBlock Ephemeral Rollup transaction executed under 20ms.</p>
+        </div>
+
+        {/* NFT Rarity Odds */}
+        <div className="card">
+          <h2>NFTs by Rarity</h2>
+          <div className="odds">
+            {RARITIES.map((r, idx) => (
+              <span key={r.name} className="odd" style={{ '--c': r.color } as React.CSSProperties}>
+                <i />
+                {r.name} · {stats.nftsByRarity[idx]}
+              </span>
+            ))}
+          </div>
+          <p>Rarity tier is scaled by your damage contribution share on the winning squad.</p>
         </div>
       </div>
-    </div>
+
+      {/* NFT Collection Section */}
+      <div className="lobby" style={{ marginTop: '24px' }}>
+        <div>
+          <small>My Collection</small>
+          <h2>NFTs Unboxed from Boosters</h2>
+        </div>
+      </div>
+
+      <div className="nftgrid">
+        {nfts.map(nft => {
+          const r = RARITIES[nft.rarity];
+          const f = FIGHTERS[nft.character] || FIGHTERS['tung'];
+
+          return (
+            <article
+              key={nft.tokenId}
+              className="nftcard"
+              style={{ '--c': r.color } as React.CSSProperties}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  background: '#0b0612',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <CharacterSvg character={nft.character} facing="right" pose="victory" />
+              </div>
+
+              <div className="rar" style={{ color: r.color }}>
+                {r.name.toUpperCase()}
+              </div>
+
+              <div className="sub">
+                {f.name} · #{nft.tokenId}
+              </div>
+
+              <div className="sub">
+                Match #{nft.matchId} · {nft.mintedAt}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
   );
 };

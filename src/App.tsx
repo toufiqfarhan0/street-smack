@@ -1,69 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { Arena } from './components/Arena';
-import { Controller } from './components/Controller';
-import { Lobby } from './components/Lobby';
+import { Home } from './components/Home';
+import { Dashboard } from './components/Dashboard';
 import { Profile } from './components/Profile';
+import { Characters } from './components/Characters';
+import { Play } from './components/Play';
 
 export function App() {
-  const [currentView, setCurrentView] = useState<'arena' | 'controller' | 'lobby' | 'profile'>('arena');
+  const getRouteFromHash = () => {
+    const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0];
+    if (['dashboard', 'profile', 'characters', 'play', 'player', 'screen'].includes(hash)) {
+      return hash;
+    }
+    return 'home';
+  };
+
+  const [currentRoute, setCurrentRoute] = useState(getRouteFromHash);
   const [walletConnected, setWalletConnected] = useState(true);
 
-  // Sync hash routing
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#/', '').replace('#', '');
-      if (['arena', 'controller', 'lobby', 'profile'].includes(hash)) {
-        setCurrentView(hash as any);
-      }
+      setCurrentRoute(getRouteFromHash());
     };
 
-    handleHashChange();
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const navigate = (view: 'arena' | 'controller' | 'lobby' | 'profile') => {
-    setCurrentView(view);
-    window.location.hash = `#/${view}`;
-  };
+  const isWide = currentRoute === 'screen' || currentRoute === 'dashboard';
 
   return (
-    <div className="wrap wide">
+    <div className={`wrap ${isWide ? 'wide' : ''}`}>
       <Header
-        currentView={currentView}
-        onNavigate={navigate}
+        currentRoute={currentRoute}
         walletConnected={walletConnected}
-        onConnectWallet={() => setWalletConnected(true)}
+        onToggleWallet={() => setWalletConnected(prev => !prev)}
       />
 
-      <main style={{ minHeight: 'calc(100vh - 120px)' }}>
-        {currentView === 'arena' && (
-          <Arena onJoinAsPlayer={() => navigate('controller')} />
-        )}
-
-        {currentView === 'controller' && (
-          <Controller onBackToArena={() => navigate('arena')} />
-        )}
-
-        {currentView === 'lobby' && (
-          <Lobby onSelectFight={() => navigate('arena')} />
-        )}
-
-        {currentView === 'profile' && (
-          <Profile />
-        )}
+      <main>
+        {currentRoute === 'home' && <Home />}
+        {currentRoute === 'dashboard' && <Dashboard />}
+        {currentRoute === 'profile' && <Profile />}
+        {currentRoute === 'characters' && <Characters />}
+        {currentRoute === 'play' && <Play mode="normal" />}
+        {currentRoute === 'player' && <Play mode="player" />}
+        {currentRoute === 'screen' && <Play mode="screen" />}
       </main>
-
-      {/* Footer info */}
-      <footer style={{ marginTop: '20px', paddingTop: '14px', borderTop: '1px solid var(--line)', textAlign: 'center', fontSize: '12px', color: 'var(--bone-dim)' }}>
-        <span>
-          🥊 <b>STREET SMACK</b> — Built for <b>Solana Blitz v9</b> powered by{' '}
-          <a href="https://magicblock.gg" target="_blank" rel="noreferrer" style={{ color: 'var(--gold)', fontWeight: 700 }}>
-            MagicBlock Ephemeral Rollups
-          </a>
-        </span>
-      </footer>
     </div>
   );
 }

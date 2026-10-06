@@ -123,7 +123,7 @@ class GameStateManager {
 
           // Rotate 10-second mini-game
           if (this.match.timeLeftSeconds % 10 === 0) {
-            this.activeMiniGameIndex = (this.activeMiniGameIndex + 1) % 5;
+            this.activeMiniGameIndex = (this.activeMiniGameIndex + 1) % 4;
           }
         } else {
           this.finishMatch();

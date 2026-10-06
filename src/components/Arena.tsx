@@ -112,7 +112,7 @@ export const Arena: React.FC<ArenaProps> = ({ onJoinAsPlayer }) => {
             <div className="sa-banner">
               <b>K.O. !</b>
               <span>
-                VAINQUEUR — TEAM {match.winner === 'A' ? fighterA.name.toUpperCase() : fighterB.name.toUpperCase()}
+                WINNER — TEAM {match.winner === 'A' ? fighterA.name.toUpperCase() : fighterB.name.toUpperCase()}
               </span>
             </div>
           )}
