@@ -1,0 +1,22 @@
+[package]
+name = "street-smack"
+version = "0.1.0"
+description = "Street Smack — Real-time meme aura battle on Solana with MagicBlock Ephemeral Rollups"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "street_smack"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.30.1"
+anchor-spl = "0.30.1"
+solana-program = "~1.18.26"
+ephemeral-rollups-sdk = { version = "0.15.5", features = ["anchor-compat"] }
